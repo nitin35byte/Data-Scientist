@@ -223,3 +223,63 @@ select mark_sales(200);
 
 
 #select sales , add_to_col(sales) as default_sales from sales1;
+
+
+
+
+---------------------------------xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx------------------------
+--CMD command-
+-- to change dir use -put DIRECTORY name colun (ex: D:)
+--to CHECK directory data use dir
+
+Automate SQl 
+
+--#first install scvkit
+--#execute --: csvsql --csvsql --dialect mysql --snifflimit 100000 sales_data_final.csv > output_sales.sql
+--(100000 - device lenth of data m, sales_data_final.csv - file name)
+
+
+
+
+
+--creating DATABASE
+create database dress_data;
+
+--creat columns and tables
+use dress_data;
+create table if not exists dress(
+`Dress_ID` varchar(30),	
+`Style`	varchar(30),	
+`Price`	varchar(30),	
+`Rating`	varchar(30),	
+`Size`	varchar(30),	
+`Season`	varchar(30),	
+`NeckLine`	varchar(30),	
+`SleeveLength` varchar(30),		
+`waiseline`	varchar(30),	
+`Material`	varchar(30),	
+`FabricType`	varchar(30),	
+`Decoration`	varchar(30),	
+`Pattern Type` varchar(30),		
+`Recommendation` varchar(30));
+
+alter table dress add primary key(Dress_ID);
+
+drop table dress;
+
+--Importing data file to tables
+
+LOAD DATA INFILE  
+'E:/AttributeDataSet.csv'
+into table dress
+CHARACTER SET 'utf8'
+FIELDS TERMINATED by ','
+ENCLOSED by '"'
+lines terminated by '\r\n'
+IGNORE 1 lines;
+
+
+select * from dress;
+
+show tables;
+
