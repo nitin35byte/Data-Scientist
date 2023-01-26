@@ -1,0 +1,225 @@
+SQL Most Important Quesries 
+
+--Create Table :
+
+alter table sales1
+add column  discount_flag varchar(20) after discount;
+
+--Copy data from existing column with condition
+
+update  sales1
+set discount_flag=if(discount >0 ,'Yes', 'No');
+
+--SUmming mutiple column in one
+
+select (sales*discount+shipping_cost)  as CTC from sales1;
+
+
+--Bulk uploading in DB
+
+LOAD DATA INFILE  
+'E:/sales_data_final.csv'
+into table sales1
+CHARACTER SET 'utf8'
+FIELDS TERMINATED by ','
+ENCLOSED by '"'
+lines terminated by '\r\n'
+IGNORE 1 lines;
+
+-- convert int to date format
+select str_to_date(order_date,'%m/%d/%Y') from sales1;
+
+--copying data with date foramt fro existing table
+update sales1 
+set order_date_new= str_to_date(order_date,'%m/%d/%Y');
+
+
+--extracting previous days data 
+
+select * from sales1 where ship_date_new <date_sub(now() ,interval 1 week);
+
+
+--upding data
+
+update sales1 set year_new=year(order_date_new);
+update sales1 set Month_New=month(order_date_new);
+update sales1 set Day_New=month(order_date_new);
+
+
+--extracting data with two like condition
+
+select * from employees where first_name like "a%" or first_name like "h%";
+select * from student where firstname like "%_itin%";
+select SUBSTRING(firstname, 'ni') AS ExtractString from student;
+select * from student where firstname like "%a__";
+select * from employees where first_name like "%a________";
+select * from employees where first_name like "a%o";
+select * from employees where first_name like "_r%";
+select * from employees where first_name like "______r%";
+
+
+--between 
+select * from salaries where salary between '30000' and '60000';
+
+-----find select max salary
+
+select Max(salary) from salaries where salary not in (select max(salary)  from salaries);(we can use Top function)
+
+select salary from salaries order by salary desc limit 3 offset 1;
+
+SELECT MAX(salary) AS salary 
+FROM salaries 
+WHERE salary <> (SELECT MAX(salary) 
+FROM salaries);
+
+
+--Delete 
+
+Delete from student where studentid not in (
+select max(studentid) from student group by FirstName,LastName);
+
+--case statemet
+SELECT OrderID, Quantity,
+CASE
+    WHEN Quantity > 30 THEN 'The quantity is greater than 30'
+    WHEN Quantity = 30 THEN 'The quantity is 30'
+    ELSE 'The quantity is under 30'
+END AS QuantityText
+FROM OrderDetails;
+
+
+--join
+
+select e.emp_no,e.first_name,e.last_name, s.salary from employees e inner join salaries s  on e.emp_no=s.emp_no
+union
+select e.emp_no,e.first_name,e.last_name, s.salary from employees e inner join salaries s  on e.emp_no=s.emp_no;
+
+
+---Procedure
+USE employees;
+
+drop PROCEDURE if exists select_employees;
+
+DELIMITER $$
+CREATE procedure select_employees()
+begin
+select * from employees 
+LIMIT 1000;
+
+END$$
+DELIMITER ;
+
+
+drop PROCEDURE if exists emp_salary;
+
+DELIMITER $$
+CREATE procedure emp_salary(p_emp__no INTEGER)
+begin
+select e.first_name , e.last_name,s.salary ,s.from_date , s.to_date
+from employees e
+join
+salaries s ON e.emp_no=s.emp_no
+where emp_no=p_emp__no;
+
+END$$
+DELIMITER ;
+
+
+--query to insert data in  new column whihc having coult one
+
+create table student_dummy3
+select * from student GROUP BY studentid Having COUNT(*) > 1;
+
+--Creating table with without coping data
+create table sales_dummy
+select * from sales1 where 1!=1;
+
+---CReating table with coping all the data from another table
+create table sales_dummy
+select * from sales1;
+
+--rename table
+ALTER TABLE student_dummy3 RENAME TO student_dummy33;
+
+
+-- rank and ddesc rank
+
+select * from student where studentID in (1,2);
+select  Class , Marks, DENSE_RANK() OVER
+(partition by subject order by marks desc);#as 'DENSE_RANK'
+
+SELECT StudentID,stream,Class,Marks, dense_rank() 
+OVER ( partition by stream order by marks desc ) 
+AS 'dense_rank' FROM student;
+
+SELECT StudentID,stream,Class,Marks, rank() 
+OVER ( partition by stream order by marks desc ) 
+AS 'rank' FROM student;
+
+
+--------duplicate row 
+
+SELECT Emp_no, COUNT(Emp_no) FROM employees GROUP BY Emp_no HAVING COUNT(Emp_no)>1;
+
+
+--------To find second min salry
+
+select * from salaries 
+where salary = (select min(salary) from salaries 
+where salary > (select min(salary) from salaries));
+
+
+----Window Function
+
+--- Row Number , Rank , Dense Rank
+
+select * from (select emp_no,salary ,row_number() over(order by salary desc) as r_number ,
+rank() over(order by salary desc) as r_rank,
+dense_rank () over(order by salary desc) as d_number 
+from salaries )as test;
+
+select * from (select emp_no , salary,
+row_number() over(order by salary desc) as 'row_number',
+rank() over(order by salary desc ) as 'row_rank',
+dense_rank() over( order by salary desc) as 'dense_rank'
+from salaries ) as test where `dense_rank` = 3;
+
+
+
+
+--func to return int to varchar
+DELIMITER &&
+create function int_to_str(a int)
+returns varchar(30)
+deterministic
+begin
+declare b varchar(20);
+set a = b;
+return b;
+end&&
+
+delimiter &&
+create function mark_sales(sales int)
+returns varchar(30)
+deterministic
+begin
+declare flag_sales varchar(30);
+if sales <= 100 then
+set flag_sales= "super affordable product" ;
+elseif sales > 100 and sales < 300 then 
+set flag_sales = "affordable" ;
+elseif sales >300 and sales < 600 then
+ set flag_sales = "moderate price" ;
+ else 
+	set flag_sales = "expensive" ;
+end if ;
+return flag_sales;
+end&&
+select mark_sales(200);
+
+
+#select profit ,discount,sales ,final_profit(sales, discount ,profit) from sales1;
+#select profit, discount  ,sales ,  final_profits_real(profit, discount,sales) from sales1 ; 
+
+
+#select sales , add_to_col(sales) as default_sales from sales1;
